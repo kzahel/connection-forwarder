@@ -1,0 +1,32 @@
+{
+    "name": "Forwarder",
+    "author": "Kyle Graehl",
+    "version": "0.0.1",
+    "manifest_version": 2,
+    "offline_enabled": true,
+    "minimum_chrome_version": "60",
+    "app": {
+        "background": {
+            "scripts": ["chromise.js","background.js"]
+        }
+    },
+    "permissions": [
+	"system.network"
+    ],
+    "optional_permissions": [
+        "background"
+    ],
+    "sockets": {
+	"udp": {
+            "send": [""],
+            "bind": [""],
+            "multicastMembership": ""
+	},
+	"tcp": {
+            "connect": [""]
+	},
+	"tcpServer": {
+            "listen": ["*:*"]
+	}
+    }
+}
