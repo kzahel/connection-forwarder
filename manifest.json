@@ -11,7 +11,8 @@
         }
     },
     "permissions": [
-	"system.network"
+	"system.network",
+        "notifications"
     ],
     "optional_permissions": [
         "background"
