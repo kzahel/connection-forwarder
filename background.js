@@ -1,8 +1,5 @@
 const Forwards = {}
-const ForwardAccepts = {}
-const ForwardConns = {}
-const ReadBuffers = {}
-const k_BUF_LIMIT = 4096 * 2
+const k_BUF_LIMIT = 4096 * 16
 //const k_BUF_LIMIT = 1024
 const SockState = {}
 const ProxyLookup = {}
@@ -11,10 +8,9 @@ let opts = {
   autostart: false, // run when profile logs in / chrome starts
   background: false, // run even when you close the window
 
-  // perhaps create presets around this
   forwards: [
     { proto:'TCP',
-      disabled:true,
+      disabled:false,
       description:'ssh to termux',
       src_addr:'0.0.0.0',
       src_port:2222,
@@ -30,11 +26,19 @@ let opts = {
       dst_port:8000
     },
     { proto:'TCP',
-      disabled:false,
+      disabled:true,
       description:'proxy to web server on another computer',
       src_addr:'0.0.0.0',
       src_port:8080,
       dst_addr:'192.168.1.129',
+      dst_port:8887,
+    },
+    { proto:'TCP',
+      disabled:true,
+      description:'proxy to web server on another computer',
+      src_addr:'0.0.0.0',
+      src_port:8081,
+      dst_addr:'192.168.1.109',
       dst_port:8887,
     }
   ]
@@ -45,33 +49,49 @@ chrome.sockets.tcp.onReceiveError.addListener( onReceive.bind(window, true) )
 chrome.sockets.tcpServer.onAccept.addListener( onAccept )
 
 class ProxySocket {
-  constructor(socka, sockb) {
+  constructor(fwdid, socka, sockb) {
+    this.fwdid = fwdid
     this.socka = socka
     this.sockb = sockb
 
-    this.atob = new BufferedForwarder(this.socka, this.sockb)
-    this.btoa = new BufferedForwarder(this.sockb, this.socka)
+    this.atob = new BufferedForwarder(this, this.socka, this.sockb)
+    this.btoa = new BufferedForwarder(this, this.sockb, this.socka)
 
     ProxyLookup[this.socka] = this.atob
     ProxyLookup[this.sockb] = this.btoa
   }
+  cleanup(forwarder) {
+    if (this.atob.finished && this.btoa.finished) {
+      delete SockState[this.socka]
+      delete SockState[this.sockb]
+      chrome.sockets.tcp.close(this.socka)
+      chrome.sockets.tcp.close(this.sockb)
+      let state = Forwards[this.fwdid]
+      delete state.active[this.sockb]
+    }
+  }
 }
 
 class BufferedForwarder {
-  constructor(src, dst) {
+  constructor(prox, src, dst) {
     // reads data of src and dumps on dst
+    this.prox = prox
     this.src = src
     this.dst = dst
     this.buf = new Deque()
     this.bufSz = 0
-    this.loop()
+    this.finished = false
+    this.flushloop()
+    //this._resolve = null // weird, if i set this, cant assign to it??
   }
 
   onData(isErr, info) {
+    var resolve = this._resolve
+    this._resolve = null
     console.assert(info.socketId === this.src)
     if (isErr) {
-      SockState[info.socketId].connected = false
-      console.log('(buffered-close)',this.src)
+      SockState[this.src].connected = false
+      console.log('(buffered-close)',this.src,info.resultCode)
       this.buf.push(info)
     } else {
       this.bufSz += info.data.byteLength
@@ -79,28 +99,42 @@ class BufferedForwarder {
       this.buf.push( info.data )
     
       if (this.bufSz >= k_BUF_LIMIT) {
-        if ( ! SockState[this.src].paused && ! SockState[this.src].pausechange ) {
-          dopause( info.socketId, true )
+        if ( ! SockState[this.src].paused && ! SockState[this.src].pausechange) {
+          dopause( this.src, true )
         }
       }
+    }
+    if (resolve) {
+      resolve()
     }
   }
 
   cleanup() {
-    console.assert( this.bufSz === 0 )
     this.buf.clear()
-    // both src and dst sockets are done for good ?
-    console.log('cleanup',this.src,this.dst)
+    this.finished = true
+    this.prox.cleanup(this)
   }
 
-  async loop() {
+  stateChange() {
+    return new Promise( resolve => {
+      this._resolve = resolve
+    } )
+  }
+
+  async flushloop() {
     while (true) {
-      if (this.bufSz == 0) {
+      if (! SockState[this.dst].connected) {
+        this.cleanup()
+        break
+      }
+      let pf = this.buf.peekFront()
+      if (this.bufSz == 0 && !(pf && pf.resultCode)) {
         // if have no incoming data, nothing to do
-        await dosleep(0.1)
+        await this.stateChange() // edge triggered, better
+        //await dosleep(100) // slower
         continue
       }
-
+      
       var data = this.buf.shift()
       if (data.resultCode) {
         SockState[this.dst].disconnecting = true
@@ -111,10 +145,19 @@ class BufferedForwarder {
         this.cleanup()
         break
       } else {
-        this.bufSz-= data.byteLength
+        this.bufSz -= data.byteLength
         SockState[this.dst].writing = true
-        var send_res = await chromise.sockets.tcp.send( this.dst, data )
-        console.log('(flushed)',this.src,'->',this.dst)
+        console.assert( SockState[this.dst].connected )
+        try {
+          // its possible the receiving end abruptly closes the
+          // connection. we have no way of knowing beforehand
+          var send_res = await chromise.sockets.tcp.send( this.dst, data )
+        } catch (e) {
+          console.log('sock send err',this.dst,e.message)
+          SockState[this.dst].connected = false
+          continue
+        }
+        //console.log('(flushed)',this.src,'->',this.dst)
         SockState[this.dst].writing = false
         if (send_res.resultCode < 0) {
           console.error('send result code < 0',send_res.resultCode)
@@ -122,7 +165,8 @@ class BufferedForwarder {
         }
           
         if (this.bufSz < k_BUF_LIMIT) {
-          if ( SockState[this.src].paused && ! SockState[this.src].pausechange ) {
+          if ( SockState[this.src].paused &&
+               ! SockState[this.src].pausechange ) {
             await dopause(this.src,false)
           }
         }
@@ -155,20 +199,26 @@ function onReceive(isErr, info) {
 }
 
 async function onAccept(info) {
-  let reg = Forwards[info.socketId]
-  console.log('sock accept',info.clientSocketId,'on forwarder',info.socketId)
+  let fwdid = info.socketId
+  let state = Forwards[fwdid]
+  let accept_id = info.clientSocketId
+  console.log('sock accept',accept_id,'on forwarder',fwdid)
   let sock = await chromise.sockets.tcp.create()
-  SockState[sock.socketId] = {paused:false, type:'conn'}
-  SockState[info.clientSocketId] = {paused:true, type:'accept', connected:true}
-  SockState[sock.socketId].connecting = true
-  let conn = await chromise.sockets.tcp.connect( sock.socketId, reg.defn.dst_addr, reg.defn.dst_port )
-  SockState[sock.socketId].connecting = false
-  SockState[sock.socketId].connected = true
-  console.log('created conn sock',sock.socketId,'conn result',conn)
-  ForwardAccepts[info.clientSocketId] = {reg:info.socketId, conn_id:sock.socketId}
-  ForwardConns[sock.socketId] = {reg:info.socketId, accept_id:info.clientSocketId}
-  new ProxySocket(sock.socketId, info.clientSocketId)
-  dopause(info.clientSocketId, false)
+  let conn_id = sock.socketId
+  SockState[conn_id] = {paused:false, type:'conn'}
+  SockState[accept_id] = {paused:true, type:'accept', connected:true}
+  SockState[conn_id].connecting = true
+  let conn = await chromise.sockets.tcp.connect( conn_id, state.defn.dst_addr, state.defn.dst_port )
+  SockState[conn_id].connecting = false
+  SockState[conn_id].connected = true
+  console.log('created conn sock',conn_id,'conn result',conn)
+  let prox = new ProxySocket(fwdid, conn_id, accept_id)
+  state.active[prox.sockb] = prox
+  dopause(accept_id, false)
+}
+
+async function stop_forward(id) {
+  
 }
 
 async function setup_forward(defn) {
@@ -179,7 +229,7 @@ async function setup_forward(defn) {
     return { error: 'disabled' }
   }
   let sock = await chromise.sockets.tcpServer.create()
-  var state = {defn:defn, sock_id:sock.socketId}
+  let state = {defn:defn, sock_id:sock.socketId, active:{}}
   Forwards[sock.socketId] = state
   var res = await chromise.sockets.tcpServer.listen(sock.socketId, defn.src_addr, defn.src_port)
   if (res < 0) {
@@ -215,8 +265,9 @@ async function ensure_firewall() {
 
 async function dopause(id, bool) {
   console.assert( ! SockState[id].pausechange )
+  console.assert( SockState[id].connected )
   SockState[id].pausechange = true
-  //console.warn('dopause',id,bool)
+  //console.log('dopause',id,bool)
   
   return new Promise(resolve => {
     chrome.sockets.tcp.setPaused(id, bool, function(r) {

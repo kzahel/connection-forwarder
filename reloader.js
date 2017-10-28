@@ -27,7 +27,7 @@
       lastVer = version
     } else if (lastVer !== version) {
       console.log('manifest version changed -- reload')
-      await dosleep(1)
+      await dosleep(1000)
       chrome.runtime.reload()
     }
   }
@@ -56,7 +56,7 @@
         fhashes[filename] = hash
       } else if (fhashes[filename] !== hash) {
         console.log('file contents changed:',filename,hash,'reloading...')
-        await dosleep(2) // wait a bit in case still using forwarding app to scp files which caused this update !
+        await dosleep(2000) // wait a bit in case still using forwarding app to scp files which caused this update !
         fhashes[filename] = hash
         chrome.runtime.reload()
       }
@@ -79,7 +79,7 @@
         var told = mTimes[filename].getTime()
         var tnew = meta.modificationTime.getTime()
         console.log('file modification time changed! reloading...',filename,told,tnew)
-        await dosleep(100)
+        await dosleep(10000)
         //chrome.runtime.reload()
       }
     }
@@ -87,7 +87,7 @@
   
   while (true) {
     contents_tryreload() // most reliable
-    await dosleep(4)
+    await dosleep(4000)
   }
 
 })()
