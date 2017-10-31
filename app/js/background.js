@@ -1,6 +1,5 @@
 const Forwards = {}
 const k_BUF_LIMIT = 4096 * 16
-//const k_BUF_LIMIT = 1024
 const SockState = {}
 const ProxyLookup = {}
 
@@ -18,7 +17,7 @@ let opts = {
       dst_port:8022
     },
     { proto:'TCP',
-      disabled:true,
+      disabled:false,
       description:'python3 http.server inside termux',
       src_addr:'0.0.0.0',
       src_port:8000,
@@ -26,20 +25,20 @@ let opts = {
       dst_port:8000
     },
     { proto:'TCP',
-      disabled:true,
+      disabled:false,
       description:'proxy to web server on another computer',
       src_addr:'0.0.0.0',
-      src_port:8080,
-      dst_addr:'192.168.1.129',
-      dst_port:8887,
+      src_port:8888,
+      dst_addr:'192.168.100.5',
+      dst_port:8888,
     },
     { proto:'TCP',
-      disabled:true,
-      description:'proxy to web server on another computer',
+      disabled:false,
+      description:'proxy to create react app',
       src_addr:'0.0.0.0',
-      src_port:8081,
-      dst_addr:'192.168.1.109',
-      dst_port:8887,
+      src_port:5000,
+      dst_addr:'100.115.92.2',
+      dst_port:5000,
     }
   ]
 }
@@ -218,7 +217,7 @@ async function onAccept(info) {
 }
 
 async function stop_forward(id) {
-  
+  // TODO: stop a forwarding rule
 }
 
 async function setup_forward(defn) {
@@ -231,9 +230,13 @@ async function setup_forward(defn) {
   let sock = await chromise.sockets.tcpServer.create()
   let state = {defn:defn, sock_id:sock.socketId, active:{}}
   Forwards[sock.socketId] = state
-  var res = await chromise.sockets.tcpServer.listen(sock.socketId, defn.src_addr, defn.src_port)
+  try {
+    var res = await chromise.sockets.tcpServer.listen(sock.socketId, defn.src_addr, defn.src_port)
+  } catch(e) {
+    return {error:e}
+  }
   if (res < 0) {
-    return 'error'
+    return {error:res}
   }
   await chromise.sockets.tcpServer.setPaused( sock.socketId, false )
   state.listening = true
@@ -250,17 +253,41 @@ async function ensure_firewall() {
     id:'panel',
     type:'panel',
     resizable:false,
-    //hidden:true,
+    hidden:true,
     frame:'none'
   }
+  if (OS !== 'Chrome') { delete win_opts.type }
   
   let win = await chromise.app.window.create('panel.html',win_opts)
-  win.outerBounds.setSize(200,200)
-  win.minimize()
+  win.outerBounds.setSize(300,180)
+  if (DEV) {
+    open_options()
+  } else {
+    win.show()
+    win.minimize()
+  }
   function onrestore() {
     console.log('window restore...')
   }
   win.onRestored.addListener( onrestore )
+}
+
+async function open_options() {
+  if (chrome.app.window.get('options')) {
+    return
+  }
+  let win_opts = {
+    id:'options',
+    hidden: true,
+    outerBounds: { width: 400, height: 700 }
+  }
+
+  // let opts_page = 'options.html'
+  let opts_page = 'react-ui/public/index.html'
+  let win = await chromise.app.window.create(opts_page,win_opts)
+  win.outerBounds.setSize(win_opts.outerBounds.width,
+                          win_opts.outerBounds.height)
+  win.show()
 }
 
 async function dopause(id, bool) {
@@ -287,8 +314,9 @@ async function dopause(id, bool) {
 
 function onblur(window) {
   const panel = chrome.app.window.get('panel')
+  /*
   if (! panel.minimized) 
     panel.minimize()
+*/
 }
 
-go()

@@ -13,7 +13,8 @@
   const dir = await chromise.runtime.getPackageDirectoryEntry()
   const dentry = FileSystem.prototype.__modifyEntryInterface__(dir)
 
-  const toCheck = ['manifest.json', 'background.js', 'reloader.js','blackbox.js']
+  let toCheck = ['manifest.json', 'background.js', 'reloader.js','blackbox.js','runtime.js']
+  toCheck = toCheck.concat(['panel.html','panel.js','styles.css','options.html'])
 
   var lastVer = null
   async function version_tryreload() {
@@ -56,7 +57,7 @@
         fhashes[filename] = hash
       } else if (fhashes[filename] !== hash) {
         console.log('file contents changed:',filename,hash,'reloading...')
-        await dosleep(2000) // wait a bit in case still using forwarding app to scp files which caused this update !
+        //await dosleep(2000) // wait a bit in case still using forwarding app to scp files which caused this update !
         fhashes[filename] = hash
         chrome.runtime.reload()
       }
@@ -84,10 +85,12 @@
       }
     }
   }
-  
-  while (true) {
-    contents_tryreload() // most reliable
-    await dosleep(4000)
+
+  if (DEV) {
+    while (true) {
+      contents_tryreload() // most reliable
+      await dosleep(2000)
+    }
   }
 
 })()

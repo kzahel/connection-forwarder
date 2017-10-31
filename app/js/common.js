@@ -1,4 +1,17 @@
 var reload = chrome.runtime.reload
+const DEV = true
+
+var OS
+if (navigator.userAgent.match('OS X')) {
+  OS = 'Mac'
+} else if (navigator.userAgent.match("Windows")) {
+  OS = "Win"
+} else if (navigator.userAgent.match("CrOS")) {
+  OS = "Chrome"
+} else {
+  OS = "Linux"
+}
+
 
 // https://cs.chromium.org/chromium/src/net/base/net_error_list.h?sq=package:chromium&l=111
 const k_common_socket_err_codes = {
