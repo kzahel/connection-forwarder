@@ -16,3 +16,5 @@ TODO:
 - let app background itself when no active sockets, and resume
 - create a UI to create/remove rules
 - add options such as autostart, backgrounding, etc
+- localhost listening API to list/add/remove forwards.
+- add external messaging for okremote commands
