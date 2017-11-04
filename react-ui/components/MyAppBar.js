@@ -20,6 +20,7 @@ function MyAppBar(props) {
     <div className={classes.root}>
       <AppBar position="static" color="default">
         <Toolbar>
+          <img src="/icons/icon-64.png" className="appicon" />
           <Typography type="title" color="inherit">
             Connection Forwarder
           </Typography>

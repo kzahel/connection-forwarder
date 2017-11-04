@@ -72,7 +72,7 @@ class MyApp extends React.Component {
       return <div>Loading</div>
     }
     let rules = this.state.rules.map( rule => (
-      <RuleControl key={rule.id} rule={rule} />
+      <RuleControl disabled={!this.state.settings.forwardingEnabled} key={rule.id} rule={rule} />
     ))
 		return (
 			<div>

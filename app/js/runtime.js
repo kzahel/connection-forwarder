@@ -4,26 +4,56 @@ const globalState = {
   handlingMessage:false
 }
 
-async function onStartup(details) {
-  maybeLaunch('onStartup',details)
+function launch() {
+  maybeLaunch('onLaunched',{source:'devtools'})
 }
 
-async function onInstalled(details) {
-  maybeLaunch('onInstalled',details)
+function onStartup(details) {
+  maybeLaunch('onStartup',details)
+}
+function onInstalled(details) {
+  // details.reason = "install", "update", "chrome_update", or "shared_module_update"
+  // forcing chrome.runtime.reload makes "update"
+  // maybeLaunch('onInstalled',details)
+}
+function onLaunched(info) {
+  maybeLaunch('onLaunched',info)
 }
 
 async function maybeLaunch(event, details) {
-  console.log('maybeLaunch',event,details)
   let storage = await chromise.storage.local.get()
   storage = storage || {}
   storage.rules = storage.rules || []
   storage.settings = storage.settings || {}
   globalState.storage = storage
-  console.log('storage',storage)
   updateDefaultSettings(globalState.storage.settings)
-  if (event == 'onInstalled') {
-    go()
-    open_options()
+  console.log(event,details,storage.settings)
+  //console.log('rules',storage.rules)
+  //console.log('settings',storage.settings)
+  if (event == 'onLaunched') {
+    // on first install, dont auto launch app ?
+    if (details.source == 'reload') {
+      //return
+    }
+    let win = chrome.app.window.get(constants.SETTINGS)
+    if (win) {
+      win.focus()
+      return
+    }
+    await go()
+    open_settings()
+  } else if (event == 'onStartup') {
+    // user logs into profile
+    if (storage.settings.autostart) {
+      if (storage.settings.background) {
+        // launch the secret hidden window
+        await go()
+        ensure_firewall()
+      } else {
+        await go()
+        open_settings()
+      }
+    }
   }
 }
 
@@ -50,20 +80,14 @@ async function handleMessage(msg, sender, sendResponse) {
   if (globalState.handlingMessage) return done({error:'another action is in progress'})
   globalState.handlingMessage = true
   
-  function locateForward(id) {
-    for (let lsock in Forwards) {
-      let lrule = Forwards[lsock].defn
-      if (lrule.id == id) {
-        return parseInt(lsock)
-      }
-    }
-  }
-  
   if (msg.msg == 'deleteRule' || msg.msg == 'disableRule') {
     var lsock = locateForward(msg.rule.id)
     if (msg.msg == 'disableRule') {
-      if (! lsock) return done({error:'could not find listening socket'})
-      var res = await stop_forward(lsock)
+      if (lsock) {
+        //return done({error:'could not find listening socket'})
+        // allow disabling rule even if not active
+        var res = await stop_forward(lsock)
+      }
       for (let rule of globalState.storage.rules) {
         if (rule.id == msg.rule.id) {
           rule.disabled = true
@@ -131,6 +155,8 @@ async function handleMessage(msg, sender, sendResponse) {
       }
       return done('setting updated '+sett)
     }
+  } else if (msg.msg == 'closePanel') {
+    chrome.app.window.get(constants.PANEL).minimize()
   } else {
     return done('unhandled message')
   }
@@ -148,6 +174,27 @@ function quit() {
   console.log('temporarily quit the app (e.g. close all windows and close all sockets and let it go inactive')
 }
 
-chrome.runtime.onStartup.addListener( onStartup )
+async function windowClosed(win) {
+  console.log('window closed',win.id)
+  if (win.id == constants.SETTINGS) {
+    if (globalState.storage.settings.background) {
+      ensure_firewall(win.id)
+    } else {
+      console.log('window closed and background disabled...')
+      await stop_forwarding_all()
+      console.log('listening socks',await chromise.sockets.tcpServer.getSockets())
+      // hopefully app suspends ...
+      /* // try to force earlier suspend
+         console.log('forcing suspend in 1s')
+         await dosleep(1000)
+         reload()
+      */
+    }
+  }
+}
+
+
 chrome.runtime.onInstalled.addListener( onInstalled )
+chrome.runtime.onStartup.addListener( onStartup )
 chrome.runtime.onMessage.addListener( onMessage )
+chrome.app.runtime.onLaunched.addListener( onLaunched )

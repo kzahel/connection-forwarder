@@ -24,10 +24,9 @@ class RuleControl extends React.Component {
       <div className="ruleDiv">
         {this.props.rule.src_addr.address}:{this.props.rule.src_port} to 
         {' '}{this.props.rule.dst_addr.address}:{this.props.rule.dst_port}
-        <FormGroup
-          disabled={this.state.changingState}
-          >
+        <FormGroup>
           <FormControlLabel
+            disabled={this.props.disabled}
             control={
                 <Switch
                     checked={! this.props.rule.disabled}

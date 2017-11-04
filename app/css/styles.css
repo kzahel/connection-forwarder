@@ -19,3 +19,9 @@ div.ruleContainer {
     border: 1px solid black;
     margin-left:24px;
 }
+
+.appicon {
+    width:32px;
+    height:32px;
+    margin-right:8px;
+}

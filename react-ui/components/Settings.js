@@ -37,13 +37,14 @@ class Settings extends React.Component {
 
         <FormGroup>
           <FormControlLabel
+            disabled={true}
             control={
                 <Switch
                     checked={this.props.settings.ipv6}
                     onChange={(event, checked) => this.changeSetting("ipv6",checked)}
                     />
           }
-          label="Enable IPV6"
+          label="Enable IPV6 (Coming soon)"
           />
         </FormGroup>
 

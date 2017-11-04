@@ -1,3 +1,4 @@
+console.log('background.js')
 const Forwards = {}
 const k_BUF_LIMIT = 4096 * 16
 const SockState = {}
@@ -6,6 +7,15 @@ const ProxyLookup = {}
 chrome.sockets.tcp.onReceive.addListener( onReceive.bind(window, false) )
 chrome.sockets.tcp.onReceiveError.addListener( onReceive.bind(window, true) )
 chrome.sockets.tcpServer.onAccept.addListener( onAccept )
+
+function locateForward(id) {
+  for (let lsock in Forwards) {
+    let lrule = Forwards[lsock].defn
+    if (lrule.id == id) {
+      return parseInt(lsock)
+    }
+  }
+}
 
 class ProxySocket {
   constructor(fwdid, socka, sockb) {
@@ -155,6 +165,11 @@ async function start_forwarding_all() {
   for (let rule of storage.rules) {
     if (! rule.disabled && globalState.storage.settings.forwardingEnabled) {
       // verify that the address / interface exists still ?
+      // its ok if the rule already exists (re-open settings in background mode)
+      if (locateForward(rule.id)) {
+        console.log('rule already active')
+        continue
+      }
       var res = await setup_forward(rule)
       console.log('setup forward result',res)
     }
@@ -250,64 +265,72 @@ async function setup_forward(defn) {
   }
   await chromise.sockets.tcpServer.setPaused( sock.socketId, false )
   state.listening = true
-  await ensure_firewall()
   return state
 }
 
-async function ensure_firewall() {
+async function ensure_firewall(closingWindowId) {
+  var wins = chrome.app.window.getAll()
+  console.log('ensure firewall',wins)
   // chromeos only opens a firewall port if an app window is present and not hidden
+  wins = wins.filter( win => win.id !=  closingWindowId )
+  if (wins.length > 0) return
 
-  if (DEV) {
-    open_options()
-  } else {
-    if (windowExists('panel')) { // this has race condition somehow
-      return
-    }
-    let win_opts = {
-      id:'panel',
-      type:'panel',
-      resizable:false,
-      hidden:true,
-      frame:'none'
-    }
-    if (OS !== 'Chrome') { delete win_opts.type }
-    let win = await chromise.app.window.create('/panel.html',win_opts)
-    win.outerBounds.setSize(300,180)
-    win.show()
-    win.minimize()
-    function onrestore() {
-      console.log('window restore...')
-    }
-    win.onRestored.addListener( onrestore )
+  let win_opts = {
+    id:constants.PANEL,
+    type:'panel',
+    resizable:false,
+    hidden:true,
+    frame:'none',
+//    outerBounds: {width:100,height:100}
   }
+  if (OS !== 'Chrome') { delete win_opts.type }
+  let win = await chromise.app.window.create('/panel.html',win_opts)
+  win.onClosed.addListener( windowClosed.bind(null,win) )
+  //await dosleep(1000)
+  //win.outerBounds.setPosition(0,0)
+  //win.outerBounds.setSize(250,50)
+  //win.show()
+  //await dosleep(1000)
+  //win.minimize()
+  function onrestore() {
+    console.log('window restore...')
+    win.close()
+    open_settings()
+  }
+  win.onRestored.addListener( onrestore )
+
 }
 
 function windowExists(id) {
   let windows = chrome.app.window.getAll()
   for (let win of windows) {
     if (win && win.id === id) {
-      return true
+      return win
     }
   }
 }
 
-async function open_options() {
-  if (windowExists('options')) {
+async function open_settings() {
+  if (windowExists(constants.SETTINGS)) {
     return
   }
+  let panel = windowExists(constants.PANEL)
+  if (panel) panel.close()
   let win_opts = {
-    id:'options',
+    id:constants.SETTINGS,
     hidden: true,
-    outerBounds: { width: 400, height: 700 }
+    outerBounds: { width: 400, height: 700 },
+    type:'panel'
   }
+  if (OS !== 'Chrome') { delete win_opts.type }
 
-  // let opts_page = 'options.html'
   let opts_page = '/settings.html'
   let win = await chromise.app.window.create(opts_page,win_opts)
   if (OS == 'Mac' && ! win) {
     await dosleep(500)
     win = await chrome.app.window.get(win_opts.id)
   }
+  win.onClosed.addListener( windowClosed.bind(null,win) )
   win.outerBounds.setSize(win_opts.outerBounds.width,
                           win_opts.outerBounds.height)
   win.show()
@@ -334,12 +357,3 @@ async function dopause(id, bool) {
     })
   })
 }
-
-function onblur(window) {
-  //const panel = chrome.app.window.get('panel')
-  /*
-  if (! panel.minimized) 
-    panel.minimize()
-*/
-}
-

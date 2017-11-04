@@ -1,9 +1,15 @@
 /* this file available both in react-ui settings context and background page context */
 var reload = chrome.runtime.reload
+async function reset() {
+  await chromise.storage.local.clear()
+  reload()
+}
 const DEV = true
 
 const constants = {
-	android_ip: '100.115.92.2'
+	android_ip: '100.115.92.2',
+  PANEL: 'panel',
+  SETTINGS: 'settings'
 }
 
 var OS

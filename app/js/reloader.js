@@ -13,7 +13,12 @@
   const dir = await chromise.runtime.getPackageDirectoryEntry()
   const dentry = FileSystem.prototype.__modifyEntryInterface__(dir)
 
-  let toCheck = ['manifest.json', 'js/background.js', 'js/reloader.js','js/blackbox.js','js/runtime.js','dist/bundle.js']
+  let toCheck = ['manifest.json',
+                 'js/common.js',
+                 'js/background.js',
+                 'js/reloader.js',
+                 'js/runtime.js']
+  // dist/bundle.js too big
   toCheck = toCheck.concat(['settings.html'])
 
   var lastVer = null
@@ -114,15 +119,16 @@
     }
     chrome.sockets.tcp.onReceive.addListener( onReceive )
     chrome.sockets.tcpServer.onAccept.addListener( onAccept )
+    //console.log('setting up reloader sock')
     await chromise.sockets.tcpServer.listen(sock.socketId, '192.168.64.1', 9337 )
     await chromise.sockets.tcpServer.setPaused( sock.socketId, false )
-    console.log('setup debugging reloader sock',sock.socketId)
+    //console.log('setup debugging reloader sock',sock.socketId)
   }
 
   if (DEV) {
-    if (false) {
+    if (true) {
       while (true) {
-      contents_tryreload() // most reliable
+        contents_tryreload() // most reliable
         await dosleep(2000)
       }
     } else {
