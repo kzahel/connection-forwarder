@@ -13,8 +13,8 @@
   const dir = await chromise.runtime.getPackageDirectoryEntry()
   const dentry = FileSystem.prototype.__modifyEntryInterface__(dir)
 
-  let toCheck = ['manifest.json', 'background.js', 'reloader.js','blackbox.js','runtime.js']
-  toCheck = toCheck.concat(['panel.html','panel.js','styles.css','options.html'])
+  let toCheck = ['manifest.json', 'js/background.js', 'js/reloader.js','js/blackbox.js','js/runtime.js','dist/bundle.js']
+  toCheck = toCheck.concat(['settings.html'])
 
   var lastVer = null
   async function version_tryreload() {
@@ -46,7 +46,12 @@
   async function contents_tryreload() {
     // actually read file contents and do sha1 or something and if any changed, reload.
     for (let filename of toCheck) {
-      const entry = await dentry.getFileEntry(filename)
+      var entry
+      try {
+        entry = await dentry.getFileEntry(filename)
+      } catch(e) {
+        continue
+      }
       const file = await entry.getFile()
       const text = await file.readAsArrayBuffer()
       const digest = await crypto.subtle.digest({name:'SHA-1'},text)
@@ -86,10 +91,44 @@
     }
   }
 
+  async function listen_localhost_tryreload() {
+    let sock = await chromise.sockets.tcpServer.create()
+    var watch = {}
+    function onAccept(info) {
+      if (info.socketId == sock.socketId) {
+        watch[info.clientSocketId] = true
+        chrome.sockets.tcp.setPaused( info.clientSocketId, false )
+      }
+    }
+    function onReceive(info) {
+      //console.log('recv',info)
+      if (! watch[info.socketId]) return // not our socket
+      var msg = new TextDecoder('utf-8').decode(info.data)
+      //console.log(msg)
+      if (msg.trim() === 'reloadpls') {
+        console.log('inotifywatch -- reloading')
+        chromise.sockets.tcp.close(info.socketId)
+        delete watch[info.socketId]
+        chrome.runtime.reload()
+      }
+    }
+    chrome.sockets.tcp.onReceive.addListener( onReceive )
+    chrome.sockets.tcpServer.onAccept.addListener( onAccept )
+    await chromise.sockets.tcpServer.listen(sock.socketId, '192.168.64.1', 9337 )
+    await chromise.sockets.tcpServer.setPaused( sock.socketId, false )
+    console.log('setup debugging reloader sock',sock.socketId)
+  }
+
   if (DEV) {
-    while (true) {
+    if (false) {
+      while (true) {
       contents_tryreload() // most reliable
-      await dosleep(2000)
+        await dosleep(2000)
+      }
+    } else {
+      await dosleep(2000) // dont reload in first few seconds of bootup
+      // because inotify is actually sending two modify events for some reason
+      listen_localhost_tryreload()
     }
   }
 

@@ -7,7 +7,7 @@
   "minimum_chrome_version": "60",
   "app": {
     "background": {
-      "scripts": ["common.js","deque.js","promise.filesystem.js","chromise.js","reloader.js","background.js","runtime.js"]
+      "scripts": ["js/common.js","js/third-party/deque.js","js/third-party/promise.filesystem.js","js/third-party/chromise.js","js/reloader.js","js/background.js","js/runtime.js"]
     }
   },
   "permissions": [

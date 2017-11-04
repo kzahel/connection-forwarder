@@ -59,6 +59,11 @@ class ProxySocket {
     ProxyLookup[this.socka] = this.atob
     ProxyLookup[this.sockb] = this.btoa
   }
+  shutdown() {
+    // force shutdowns
+    chrome.sockets.tcp.disconnect(this.atob.src)
+    chrome.sockets.tcp.disconnect(this.atob.dst)
+  }
   cleanup(forwarder) {
     if (this.atob.finished && this.btoa.finished) {
       delete SockState[this.socka]
@@ -90,6 +95,8 @@ class BufferedForwarder {
     console.assert(info.socketId === this.src)
     if (isErr) {
       SockState[this.src].connected = false
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=124952
+      // how does this work with half-open conns?
       console.log('(buffered-close)',this.src,info.resultCode)
       this.buf.push(info)
     } else {
@@ -174,32 +181,42 @@ class BufferedForwarder {
   }
 }
 
-async function go() {
-  const ifaces = await chromise.system.network.getNetworkInterfaces()
-  //console.log('ifaces',ifaces)
-  for (let iface of ifaces) {
-    //console.log(iface.address)
-    if (iface.address == '100.115.92.1') {
-      // android thing
-    }
+async function stop_forwarding_all() {
+  for (let lsock in Forwards) {
+    lsock = parseInt(lsock)
+    var res = await stop_forward(lsock)
+    console.log('stop forward result',res)
   }
+  return 'all stopped'
+}
 
-  for (let rule of opts.forwards) {
-    if (! rule.disabled) {
+async function start_forwarding_all() {
+  let storage = globalState.storage
+  for (let rule of storage.rules) {
+    if (! rule.disabled && globalState.storage.forwardingEnabled) {
+      // verify that the address / interface exists still ?
       var res = await setup_forward(rule)
       console.log('setup forward result',res)
     }
   }
+  return 'all started'
+}
+
+async function go() {
+  await start_forwarding_all()
+  return 'went!'
 }
 
 function onReceive(isErr, info) {
   let prox = ProxyLookup[info.socketId]
+  if (! prox) return // somebody else owns this socket
   prox.onData(isErr, info)
 }
 
 async function onAccept(info) {
   let fwdid = info.socketId
   let state = Forwards[fwdid]
+  if (! state) return // somebody else owns this socket
   let accept_id = info.clientSocketId
   console.log('sock accept',accept_id,'on forwarder',fwdid)
   let sock = await chromise.sockets.tcp.create()
@@ -207,7 +224,20 @@ async function onAccept(info) {
   SockState[conn_id] = {paused:false, type:'conn'}
   SockState[accept_id] = {paused:true, type:'accept', connected:true}
   SockState[conn_id].connecting = true
-  let conn = await chromise.sockets.tcp.connect( conn_id, state.defn.dst_addr, state.defn.dst_port )
+  var conn
+  try {
+    conn = await chromise.sockets.tcp.connect( conn_id, state.defn.dst_addr.address, state.defn.dst_port )
+  } catch(e) {
+    console.log('could not connect to dst addr',state.defn.dst_addr.address,e)
+    await chromise.sockets.tcp.disconnect( accept_id )
+    // this of course looks different -- user does not see
+    // ECONNREFUSED they just see immediate disconnection.
+    await chromise.sockets.tcp.close( accept_id )
+    await chromise.sockets.tcp.close( conn_id )
+    delete SockState[conn_id]
+    delete SockState[accept_id]
+    return
+  }
   SockState[conn_id].connecting = false
   SockState[conn_id].connected = true
   console.log('created conn sock',conn_id,'conn result',conn)
@@ -217,11 +247,31 @@ async function onAccept(info) {
 }
 
 async function stop_forward(id) {
+  console.assert(typeof id === 'number')
+  if (Forwards[id].changestate) {
+    return {error:'currently changing state due to other action'}
+  }
+  Forwards[id].changestate = true
   // TODO: stop a forwarding rule
+  for (let sockb in Forwards[id].active) {
+    let prox = Forwards[id].active[sockb]
+    prox.shutdown()
+  }
+  
+  // TODO: delete all active sockets
+  var resp
+  resp = await chromise.sockets.tcpServer.disconnect(id)
+  console.log('disconnect',resp)
+  resp = await chromise.sockets.tcpServer.close(id)
+  console.log('close',resp)
+  Forwards[id].changestate = false
+  delete Forwards[id]
+  return {result:'shutdown_ok'}
 }
 
 async function setup_forward(defn) {
-  if (defn.proto !== 'TCP') {
+  console.log('setup forward',defn)
+  if (defn.protocol !== 'TCP') {
     return { error: 'unsupported protocol' }
   }
   if (defn.disabled) {
@@ -231,7 +281,7 @@ async function setup_forward(defn) {
   let state = {defn:defn, sock_id:sock.socketId, active:{}}
   Forwards[sock.socketId] = state
   try {
-    var res = await chromise.sockets.tcpServer.listen(sock.socketId, defn.src_addr, defn.src_port)
+    var res = await chromise.sockets.tcpServer.listen(sock.socketId, defn.src_addr.address, defn.src_port)
   } catch(e) {
     return {error:e}
   }
@@ -246,34 +296,43 @@ async function setup_forward(defn) {
 
 async function ensure_firewall() {
   // chromeos only opens a firewall port if an app window is present and not hidden
-  if (chrome.app.window.get('panel')) {
-    return
-  }
-  let win_opts = {
-    id:'panel',
-    type:'panel',
-    resizable:false,
-    hidden:true,
-    frame:'none'
-  }
-  if (OS !== 'Chrome') { delete win_opts.type }
-  
-  let win = await chromise.app.window.create('panel.html',win_opts)
-  win.outerBounds.setSize(300,180)
+
   if (DEV) {
     open_options()
   } else {
+    if (windowExists('panel')) { // this has race condition somehow
+      return
+    }
+    let win_opts = {
+      id:'panel',
+      type:'panel',
+      resizable:false,
+      hidden:true,
+      frame:'none'
+    }
+    if (OS !== 'Chrome') { delete win_opts.type }
+    let win = await chromise.app.window.create('/panel.html',win_opts)
+    win.outerBounds.setSize(300,180)
     win.show()
     win.minimize()
+    function onrestore() {
+      console.log('window restore...')
+    }
+    win.onRestored.addListener( onrestore )
   }
-  function onrestore() {
-    console.log('window restore...')
+}
+
+function windowExists(id) {
+  let windows = chrome.app.window.getAll()
+  for (let win of windows) {
+    if (win && win.id === id) {
+      return true
+    }
   }
-  win.onRestored.addListener( onrestore )
 }
 
 async function open_options() {
-  if (chrome.app.window.get('options')) {
+  if (windowExists('options')) {
     return
   }
   let win_opts = {
@@ -283,8 +342,12 @@ async function open_options() {
   }
 
   // let opts_page = 'options.html'
-  let opts_page = 'react-ui/public/index.html'
+  let opts_page = '/settings.html'
   let win = await chromise.app.window.create(opts_page,win_opts)
+  if (OS == 'Mac' && ! win) {
+    await dosleep(500)
+    win = await chrome.app.window.get(win_opts.id)
+  }
   win.outerBounds.setSize(win_opts.outerBounds.width,
                           win_opts.outerBounds.height)
   win.show()
@@ -313,7 +376,7 @@ async function dopause(id, bool) {
 }
 
 function onblur(window) {
-  const panel = chrome.app.window.get('panel')
+  //const panel = chrome.app.window.get('panel')
   /*
   if (! panel.minimized) 
     panel.minimize()

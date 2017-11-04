@@ -1,6 +1,10 @@
 var reload = chrome.runtime.reload
 const DEV = true
 
+const constants = {
+	android_ip: '100.115.92.2'
+}
+
 var OS
 if (navigator.userAgent.match('OS X')) {
   OS = 'Mac'
@@ -10,6 +14,20 @@ if (navigator.userAgent.match('OS X')) {
   OS = "Chrome"
 } else {
   OS = "Linux"
+}
+
+function updateDefaultSettings(d) {
+  let setting_defaults = {
+    forwardingEnabled: true,
+    autostart: false,
+    background: false,
+    ipv6: false
+  }
+  for (let opt in setting_defaults) {
+    if (d[opt] === undefined) {
+      d[opt] = setting_defaults[opt]
+    }
+  }
 }
 
 
