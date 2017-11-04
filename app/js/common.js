@@ -1,3 +1,4 @@
+/* this file available both in react-ui settings context and background page context */
 var reload = chrome.runtime.reload
 const DEV = true
 
@@ -29,7 +30,6 @@ function updateDefaultSettings(d) {
     }
   }
 }
-
 
 // https://cs.chromium.org/chromium/src/net/base/net_error_list.h?sq=package:chromium&l=111
 const k_common_socket_err_codes = {

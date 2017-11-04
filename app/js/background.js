@@ -3,46 +3,6 @@ const k_BUF_LIMIT = 4096 * 16
 const SockState = {}
 const ProxyLookup = {}
 
-let opts = {
-  autostart: false, // run when profile logs in / chrome starts
-  background: false, // run even when you close the window
-
-  forwards: [
-    { proto:'TCP',
-      disabled:false,
-      description:'ssh to termux',
-      src_addr:'0.0.0.0',
-      src_port:2222,
-      dst_addr:'100.115.92.2',
-      dst_port:8022
-    },
-    { proto:'TCP',
-      disabled:false,
-      description:'python3 http.server inside termux',
-      src_addr:'0.0.0.0',
-      src_port:8000,
-      dst_addr:'100.115.92.2',
-      dst_port:8000
-    },
-    { proto:'TCP',
-      disabled:false,
-      description:'proxy to web server on another computer',
-      src_addr:'0.0.0.0',
-      src_port:8888,
-      dst_addr:'192.168.100.5',
-      dst_port:8888,
-    },
-    { proto:'TCP',
-      disabled:false,
-      description:'proxy to create react app',
-      src_addr:'0.0.0.0',
-      src_port:5000,
-      dst_addr:'100.115.92.2',
-      dst_port:5000,
-    }
-  ]
-}
-
 chrome.sockets.tcp.onReceive.addListener( onReceive.bind(window, false) )
 chrome.sockets.tcp.onReceiveError.addListener( onReceive.bind(window, true) )
 chrome.sockets.tcpServer.onAccept.addListener( onAccept )
@@ -193,7 +153,7 @@ async function stop_forwarding_all() {
 async function start_forwarding_all() {
   let storage = globalState.storage
   for (let rule of storage.rules) {
-    if (! rule.disabled && globalState.storage.forwardingEnabled) {
+    if (! rule.disabled && globalState.storage.settings.forwardingEnabled) {
       // verify that the address / interface exists still ?
       var res = await setup_forward(rule)
       console.log('setup forward result',res)
