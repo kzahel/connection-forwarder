@@ -4,7 +4,6 @@ async function reset() {
   await chromise.storage.local.clear()
   reload()
 }
-const DEV = true
 
 const constants = {
 	android_ip: '100.115.92.2',

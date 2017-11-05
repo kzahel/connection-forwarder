@@ -1,13 +1,13 @@
 {
   "name": "Connection Forwarder",
   "author": "Kyle Graehl",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "manifest_version": 2,
   "offline_enabled": true,
   "minimum_chrome_version": "60",
   "app": {
     "background": {
-      "scripts": ["js/common.js","js/third-party/deque.js","js/third-party/promise.filesystem.js","js/third-party/chromise.js","js/reloader.js","js/background.js","js/runtime.js"]
+      "scripts": ["js/config.js","js/common.js","js/third-party/deque.js","js/third-party/promise.filesystem.js","js/third-party/chromise.js","js/reloader.js","js/background.js","js/runtime.js"]
     }
   },
   "icons": {
