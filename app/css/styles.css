@@ -1,24 +1,40 @@
-body {
+html, body {
     margin:0;
     padding: 0;
     overflow-y: auto;
 }
 
+div.loadingDiv {
+    margin:24px;
+}
+.generic-hidden { display: none }
+
 .clsPort {
     width:50px;
 }
 
-div.ruleContainer {
+.ruleInfoText {
+    font-size:125%
 }
+
+div.settingsContainer {
+    margin-top:36px;
+}
+
+div.inputRuleContainer {
+    padding: 12px;
+    margin: 12px;
+}
+div.ruleContainer {
+    padding: 12px;
+    margin: 12px;
+}
+
 
 .appMain {
     margin:24px;
 }
 
-.ruleDiv {
-    border: 1px solid black;
-    margin-left:24px;
-}
 
 .appicon {
     width:32px;

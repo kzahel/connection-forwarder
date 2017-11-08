@@ -34,11 +34,15 @@ class MyApp extends React.Component {
     window.app = this
     console.log('setup storage change listener')
     chrome.storage.onChanged.addListener( this.onStorageChanged )
+    // remove in destructor
     this.state = {
       ready: false,
       addingRule: false
     }
     this.setup()
+  }
+  componentWillUnmount() {
+    chrome.storage.onChanged.removeListener( this.onStorageChanged )
   }
   onStorageChanged = (d,area) => {
     console.log('onStorageChanged',d,area)
@@ -46,22 +50,29 @@ class MyApp extends React.Component {
     for (let k in d) {
       dflat[k] = d[k].newValue
     }
+    dflat.addingRule=false
     if (area == 'local') {
+      // settings are stored in local storage,
+      // so a setting has changed
+      console.log('update state w/ storage change',dflat)
       this.setState(dflat)
     }
   }
-  startAddRule = e => {
-    this.setState({addingRule: true})
+  startAddRule = async (e) => {
+    let ifaces = await chromise.system.network.getNetworkInterfaces()
+    if (! this.state.settings.ipv6)
+      ifaces = ifaces.filter( i=>i.prefixLength === 24 )
+    this.setState({addingRule: true, ifaces:ifaces})
   }
   async setup() {
     let [ ifaces, storage ] =
         await Promise.all([chromise.system.network.getNetworkInterfaces(),
                            chromise.storage.local.get(['rules','settings'])])
-    ifaces = ifaces.filter( i=>i.prefixLength === 24 )
     storage.settings = storage.settings || {}
     storage.rules = storage.rules || []
     updateDefaultSettings(storage.settings)
-    // duplicated "default" logic (see "defaults") in runtime.js
+    if (! storage.settings.ipv6)
+      ifaces = ifaces.filter( i=>i.prefixLength === 24 )
     this.setState({rules:storage.rules,
                    settings:storage.settings,
                    ifaces:ifaces,
@@ -69,7 +80,7 @@ class MyApp extends React.Component {
   }
 	render() {
     if (! this.state.ready) {
-      return <div>Loading</div>
+      return <div className="loadingDiv">Loading</div>
     }
     let rules = this.state.rules.map( rule => (
       <RuleControl disabled={!this.state.settings.forwardingEnabled} key={rule.id} rule={rule} />
@@ -82,8 +93,16 @@ class MyApp extends React.Component {
           {rules}
           { this.state.addingRule ?
 				    <InputFirewallRule ifaces={this.state.ifaces} /> :
-            <Button raised onClick={this.startAddRule}>New Forwarding Rule</Button> }
+            <Button raised onClick={this.startAddRule}>Create Rule</Button> }
             <Settings settings={this.state.settings} />
+            <hr />
+
+            This software is open source (MIT)
+            <br />
+            Please <a href="https://chrome.google.com/webstore/detail/connection-forwarder/ahaijnonphgkgnkbklchdhclailflinn/reviews" target="_blank">leave a review</a> to help others find this software.
+            <br />
+            <a href="https://github.com/kzahel/connection-forwarder/wiki/FAQ" target="_blank">FAQ / Help</a>.{' '}
+            <a href="https://github.com/kzahel/connection-forwarder/issues" target="_blank">Report an issue</a>
         </div>
 			</div>
 		)

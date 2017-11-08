@@ -5,6 +5,7 @@ import { FormControl, FormHelperText } from 'material-ui/Form';
 import Input, { InputLabel } from 'material-ui/Input';
 import Select from 'material-ui/Select';
 import Button from 'material-ui/Button';
+import Paper from 'material-ui/Paper';
 
 let classes = {
   menu: "clsMenu",
@@ -18,15 +19,16 @@ class InputFirewallRule extends React.Component {
     super(props)
 
     let common_addr = [
-      {address:'0.0.0.0', label:'Anywhere'},
-      {address: constants.android_ip, label:'Internal Android'},
-      {address:'127.0.0.1', label:'Localhost'}
+      {address:'0.0.0.0', label:'0.0.0.0 (Anywhere)'},
+      {address: constants.android_ip, label:(constants.android_ip + ' (Android)')},
+      {address:'127.0.0.1', label:'127.0.0.1 (Localhost)'}
     ]
     this.addr_dropdown = []
 
     for (let c of common_addr) {
       this.addr_dropdown.push(c)
     }
+    // TODO -- refresh ifaces
     for (let iface of props.ifaces) {
       let d = {
         address:iface.address,
@@ -45,10 +47,16 @@ class InputFirewallRule extends React.Component {
       src_port: 9000,
       dst_port: 8000,
       src_addr: this.addr_dropdown[0],
-      dst_addr: this.addr_dropdown[2]
+      src_addr_custom: '',
+      dst_addr: this.addr_dropdown[2],
+      dst_addr_custom: ''
     }
   }
 
+  cancel = event => {
+    app.setState({addingRule:false})
+  }
+  
   handleAdd = async (event) => {
     window.lastRule = this.state
     console.log('add rule',this.state)
@@ -72,6 +80,8 @@ class InputFirewallRule extends React.Component {
       this.setState({
         [name]: val
       })
+    } else if (name == 'src_addr_custom' || name == 'dst_addr_custom') {
+      this.setState({[name]:event.target.value})
     }
   }
   checkPortError(port) {
@@ -96,10 +106,8 @@ class InputFirewallRule extends React.Component {
     ))
     
     return (
-      <div className="ruleContainer">
-        New firewall Rule
-        {this.state.error?JSON.stringify(this.state.error):''}
-        <br />
+      <Paper>
+      <div className="inputRuleContainer">
 
         <FormControl className={classes.formControl} disabled>
           <InputLabel htmlFor="protocol">Protocol</InputLabel>
@@ -112,6 +120,8 @@ class InputFirewallRule extends React.Component {
             {prots}
           </Select>
         </FormControl>
+
+<br />
         
         <TextField
           select
@@ -121,6 +131,16 @@ class InputFirewallRule extends React.Component {
           >
           {sources}
 			  </TextField>
+
+        <span className={this.state.src_addr.label == "Custom" ? "" : "generic-hidden"}>
+        <TextField
+          label="Custom Address"
+          value={this.state.src_addr_custom}
+          onChange={this.handleChange('src_addr_custom')}
+          >
+			  </TextField>
+        </span>
+
 
         <TextField
           label="Source Port"
@@ -136,6 +156,9 @@ class InputFirewallRule extends React.Component {
           margin="normal"
           />
 
+<br />
+
+        
         <TextField
           select
           label="Destination Address"
@@ -145,6 +168,14 @@ class InputFirewallRule extends React.Component {
           {destinations}
 			  </TextField>
 
+        <span className={this.state.dst_addr.label == "Custom" ? "" : "generic-hidden"}>
+        <TextField
+          label="Custom Address"
+          value={this.state.dst_addr_custom}
+          onChange={this.handleChange('dst_addr_custom')}
+          >
+			  </TextField>
+        </span>
 
         <TextField
           label="Destination Port"
@@ -163,11 +194,19 @@ class InputFirewallRule extends React.Component {
           {' '}to {this.getAddress(this.state.dst_addr)}:{this.state.dst_port}
         </div>
         */}
+        <br />
+
         <Button raised onClick={this.handleAdd}>
           Add Rule
         </Button>
+        <Button raised onClick={this.cancel}>
+          Cancel
+        </Button>
+        {this.state.error?JSON.stringify(this.state.error):''}
+
         
       </div>
+      </Paper>
     )
   }
   getAddress(defn) {

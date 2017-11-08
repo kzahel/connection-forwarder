@@ -126,7 +126,7 @@
   }
 
   if (DEV) {
-    if (true) {
+    if (false) {
       while (true) {
         contents_tryreload() // most reliable
         await dosleep(2000)

@@ -15,6 +15,7 @@ function onInstalled(details) {
   // details.reason = "install", "update", "chrome_update", or "shared_module_update"
   // forcing chrome.runtime.reload makes "update"
   // maybeLaunch('onInstalled',details)
+  // show a help page on first install ?
 }
 function onLaunched(info) {
   maybeLaunch('onLaunched',info)
@@ -118,7 +119,14 @@ async function handleMessage(msg, sender, sendResponse) {
       }
     }
   } else if (msg.msg == 'addRule') {
-    let newRule = JSON.parse(JSON.stringify(msg.rule))
+    let newRule = msg.rule
+
+    if (newRule.src_addr.label == "Custom") newRule.src_addr.address = newRule.src_addr_custom
+    if (newRule.dst_addr.label == "Custom") newRule.dst_addr.address = newRule.dst_addr_custom
+
+    if (! globalState.storage.settings.forwardingEnabled) {
+      return done({error:'forwarding not enabled. enable forwarding first'})
+    }
     var res = await setup_forward(newRule)
     if (res.error) {
       return done({error:res.error.message})
@@ -150,9 +158,6 @@ async function handleMessage(msg, sender, sendResponse) {
     } else {
       globalState.storage.settings[sett] = v
       await updateStorage({settings:globalState.storage.settings})
-      if (sett == 'ipv6') {
-        console.log('force refresh of network interfaces?')
-      }
       return done('setting updated '+sett)
     }
   } else if (msg.msg == 'closePanel') {
@@ -198,3 +203,4 @@ chrome.runtime.onInstalled.addListener( onInstalled )
 chrome.runtime.onStartup.addListener( onStartup )
 chrome.runtime.onMessage.addListener( onMessage )
 chrome.app.runtime.onLaunched.addListener( onLaunched )
+// chrome.app.runtime.onUpdateAvailable

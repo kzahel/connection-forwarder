@@ -3,6 +3,8 @@ import { FormControlLabel, FormGroup } from 'material-ui/Form';
 import Switch from 'material-ui/Switch';
 import IconButton from 'material-ui/IconButton';
 import DeleteIcon from 'material-ui-icons/Delete';
+import Paper from 'material-ui/Paper';
+import Tooltip from 'material-ui/Tooltip';
 
 class RuleControl extends React.Component {
   state = { changingState: false }
@@ -21,10 +23,14 @@ class RuleControl extends React.Component {
   }
   render() {
     return (
-      <div className="ruleDiv">
-        {this.props.rule.src_addr.address}:{this.props.rule.src_port} to 
+      <Paper>
+        <div className="ruleContainer">
+          <div className="ruleInfoText">
+        {this.props.rule.protocol}{' '}
+        {this.props.rule.src_addr.address}:{this.props.rule.src_port} {String.fromCharCode(8674)}
         {' '}{this.props.rule.dst_addr.address}:{this.props.rule.dst_port}
-        <FormGroup>
+          </div>
+
           <FormControlLabel
             disabled={this.props.disabled}
             control={
@@ -34,12 +40,19 @@ class RuleControl extends React.Component {
                     />
           }
           label="Enable Rule"
-          />
-          <IconButton aria-label="Delete" onClick={this.deleteRule}>
-            <DeleteIcon />
-          </IconButton>        
-        </FormGroup>
+                />
+
+          <Tooltip title="Remove this rule" 
+                   enterDelay="500"
+                   >
+            <IconButton aria-label="Delete" onClick={this.deleteRule}>
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+
       </div>
+      </Paper>
+
     )
   }
 }

@@ -7,8 +7,8 @@ async function reset() {
 
 const constants = {
 	android_ip: '100.115.92.2',
-  PANEL: 'panel',
-  SETTINGS: 'settings'
+  PANEL: 'winpanel',
+  SETTINGS: 'winsettings'
 }
 
 var OS

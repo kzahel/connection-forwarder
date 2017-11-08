@@ -256,6 +256,7 @@ async function setup_forward(defn) {
   let state = {defn:defn, sock_id:sock.socketId, active:{}}
   Forwards[sock.socketId] = state
   try {
+    // TODO ports over 65535 dont create error ? weird...
     var res = await chromise.sockets.tcpServer.listen(sock.socketId, defn.src_addr.address, defn.src_port)
   } catch(e) {
     return {error:e}
@@ -281,7 +282,7 @@ async function ensure_firewall(closingWindowId) {
     resizable:false,
     hidden:true,
     frame:'none',
-//    outerBounds: {width:100,height:100}
+    outerBounds: {width:180,height:100}
   }
   if (OS !== 'Chrome') { delete win_opts.type }
   let win = await chromise.app.window.create('/panel.html',win_opts)
@@ -289,16 +290,15 @@ async function ensure_firewall(closingWindowId) {
   //await dosleep(1000)
   //win.outerBounds.setPosition(0,0)
   //win.outerBounds.setSize(250,50)
-  //win.show()
-  //await dosleep(1000)
-  //win.minimize()
   function onrestore() {
     console.log('window restore...')
     win.close()
     open_settings()
   }
   win.onRestored.addListener( onrestore )
-
+  win.show()
+  await dosleep(2000)
+  win.minimize()
 }
 
 function windowExists(id) {
@@ -319,13 +319,12 @@ async function open_settings() {
   let win_opts = {
     id:constants.SETTINGS,
     hidden: true,
-    outerBounds: { width: 400, height: 700 },
+    outerBounds: { minWidth:200, width: 400, height: 700 },
     type:'panel'
   }
   if (OS !== 'Chrome') { delete win_opts.type }
 
-  let opts_page = '/settings.html'
-  let win = await chromise.app.window.create(opts_page,win_opts)
+  let win = await chromise.app.window.create('/settings.html',win_opts)
   if (OS == 'Mac' && ! win) {
     await dosleep(500)
     win = await chrome.app.window.get(win_opts.id)
