@@ -1,9 +1,9 @@
 ## Connection Forwarder
 (TCP Socket forwarder app)
 
-I made this app so that I could ssh into termux running on a chromebook without developer mode. Maybe you find it useful for something else.
+Available in webstore: https://chrome.google.com/webstore/detail/connection-forwarder/ahaijnonphgkgnkbklchdhclailflinn
 
-(soon) coming to webstore...
+I made this app so that I could ssh into termux running on a chromebook without developer mode. Maybe you find it useful for something else.
 
 - Use case 1: make termux sshd available on the LAN, not just on the local chromebook.
 - Use case 2: make an android-based development server (such as apache or php etc) available on the local network
@@ -29,11 +29,9 @@ The nice react auto reload tools don't work very well in the chrome app context 
 
 - UDP packet forwarding
 - cleanup/close sockets ✔️
-- let app background itself when no active sockets, and resume
 - create a UI to create/remove rules ✔️
 - add options such as autostart, backgrounding, etc ✔️
 - localhost listening API to list/add/remove forwards.
-- add external messaging for okremote commands
 
 ## LICENSE
 
