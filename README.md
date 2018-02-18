@@ -6,8 +6,8 @@ Available in webstore: https://chrome.google.com/webstore/detail/connection-forw
 I made this app so that I could ssh into termux running on a chromebook without developer mode. Maybe you find it useful for something else.
 
 ---
-# UPDATE: since Chrome 64 this extension is not even really needed for ChromeOS+Android
-ChromeOS automatically forwards listening ports on the android interface to the ChromeOS interface. But I leave this project in place in case there is some use that I'm not aware of.
+# UPDATE: since Chrome 63 this extension is not even really needed for ChromeOS+Android
+###ChromeOS automatically forwards listening ports on the android interface to the ChromeOS interface. But I leave this project in place in case there is some use that I'm not aware of.
 ---
 
 
