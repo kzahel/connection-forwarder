@@ -6,14 +6,18 @@ Available in webstore: https://chrome.google.com/webstore/detail/connection-forw
 I made this app so that I could ssh into termux running on a chromebook without developer mode. Maybe you find it useful for something else.
 
 ---
+# Update 2: It's useful again as ports are not automatically forwarded for crostini (linux) containers
+
 # UPDATE: since Chrome 63 this extension is not even really needed for ChromeOS+Android
+
 ###ChromeOS automatically forwards listening ports on the android interface to the ChromeOS interface. But I leave this project in place in case there is some use that I'm not aware of.
 ---
 
 
 - Use case 1: make termux sshd available on the LAN, not just on the local chromebook.
-- Use case 2: make an android-based development server (such as apache or php etc) available on the local network
-- Use case 3: (??) Let me know kyle@graehlarts.com or [create an issue](https://github.com/kzahel/connection-forwarder/issues)
+- Use case 2: make crostini container service available on LAN or localhost
+- Use case 3: make an android-based development server (such as apache or php etc) available on the local network
+- Use case 4: (??) Let me know kyle@graehlarts.com or [create an issue](https://github.com/kzahel/connection-forwarder/issues)
 
 Background info: android runs on a chromebook on a NAT interface that is not exposed directly on the LAN. Certain services are forwarded (such as mDNS). Everything else, not. This app lets you setup simple forwarding rules to have certain ports get forwarded to the internal android interface.
 
