@@ -7,10 +7,7 @@ I made this app so that I could ssh into termux running on a chromebook without 
 
 ---
 # Update 2: It's useful again as ports are not automatically forwarded for crostini (linux) containers
-
-# UPDATE: since Chrome 63 this extension is not even really needed for ChromeOS+Android
-
-###ChromeOS automatically forwards listening ports on the android interface to the ChromeOS interface. But I leave this project in place in case there is some use that I'm not aware of.
+# Update 1: Android container apps automatically forward listening ports to the LAN since Chrome 63.
 ---
 
 
