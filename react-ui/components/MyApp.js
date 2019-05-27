@@ -101,7 +101,7 @@ class MyApp extends React.Component {
             <br />
             Please <a href="https://chrome.google.com/webstore/detail/connection-forwarder/ahaijnonphgkgnkbklchdhclailflinn/reviews" target="_blank">leave a review</a> to help others find this software.
             <br />
-            <a href="https://github.com/kzahel/connection-forwarder/wiki/FAQ" target="_blank">FAQ / Help</a>.{' '}
+            <a href="https://github.com/kzahel/connection-forwarder/wiki" target="_blank">FAQ / Help</a>.{' '}
             <a href="https://github.com/kzahel/connection-forwarder/issues" target="_blank">Report an issue</a>
         </div>
 			</div>
