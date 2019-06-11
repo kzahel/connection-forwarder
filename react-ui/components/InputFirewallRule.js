@@ -21,6 +21,7 @@ class InputFirewallRule extends React.Component {
     let common_addr = [
       {address:'0.0.0.0', label:'0.0.0.0 (Anywhere)'},
       {address: constants.android_ip, label:(constants.android_ip + ' (Android)')},
+      {address: 'penguin.linux.test', label: 'penguin (Crostini)'},
       {address:'127.0.0.1', label:'127.0.0.1 (Localhost)'}
     ]
     this.addr_dropdown = []
