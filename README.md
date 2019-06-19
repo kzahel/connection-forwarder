@@ -5,11 +5,11 @@ Available in webstore: https://chrome.google.com/webstore/detail/connection-forw
 
 I made this app so that I could ssh into termux running on a chromebook without developer mode. Maybe you find it useful for something else.
 
----
-Update 3: Updated the build system
-Update 2: It's useful again as ports are not automatically forwarded for crostini (linux) containers
-Update 1: Android container apps automatically forward listening ports to the LAN since Chrome 63.
----
+
+- Update 3: Updated the build system
+- Update 2: It's useful again as ports are not automatically forwarded for crostini (linux) containers
+- Update 1: Android container apps automatically forward listening ports to the LAN since Chrome 63.
+
 
 
 - Use case 1: make termux sshd available on the LAN, not just on the local chromebook.
