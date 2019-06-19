@@ -24,8 +24,12 @@ Background info: android runs on a chromebook on a NAT interface that is not exp
 The nice react auto reload tools don't work very well in the chrome app context (which disallow eval, inline scripts, external resources (loaded via URL). Basically all app code must be statically present in the app directory at launch time.
 
 - `git clone (this repository)`
-- `cd react-ui; npm install; npm run watch` ( or `npm run build`)
+- `cd connection-forwarder/react-ui; npm install; npm run watch` ( or `npm run build`)
 - Go to `chrome://extensions`, check the developer mode box, click load unpacked extension, select the `"app"` folder in this repository.
+
+## Packaging
+- `cd connection-forwarder/app`
+- `../scripts/package.sh` (you may need to `apt install zip`)
 
 ## Release History
 
