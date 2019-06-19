@@ -6,8 +6,9 @@ Available in webstore: https://chrome.google.com/webstore/detail/connection-forw
 I made this app so that I could ssh into termux running on a chromebook without developer mode. Maybe you find it useful for something else.
 
 ---
-# Update 2: It's useful again as ports are not automatically forwarded for crostini (linux) containers
-# Update 1: Android container apps automatically forward listening ports to the LAN since Chrome 63.
+Update 3: Updated the build system
+Update 2: It's useful again as ports are not automatically forwarded for crostini (linux) containers
+Update 1: Android container apps automatically forward listening ports to the LAN since Chrome 63.
 ---
 
 
@@ -23,9 +24,8 @@ Background info: android runs on a chromebook on a NAT interface that is not exp
 The nice react auto reload tools don't work very well in the chrome app context (which disallow eval, inline scripts, external resources (loaded via URL). Basically all app code must be statically present in the app directory at launch time.
 
 - `git clone (this repository)`
-- `cd react-ui; npm install; ./node_modules/.bin/webpack --watch`
+- `cd react-ui; npm install; npm run watch` ( or `npm run build`)
 - Go to `chrome://extensions`, check the developer mode box, click load unpacked extension, select the `"app"` folder in this repository.
-- (optional) run `sh scripts/reloader.sh` (uses linux inotifywatch, for osx you'll need to modify this script)
 
 ## Release History
 
