@@ -2,7 +2,7 @@
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnB9deSoKBn546IsYUlJLnzJbwC7vuOXUGMgONTUs0EcvHlDQRdYfNoIJykUZxKzPwEjruQEck+7HXVntgpJPOoVsVdRAkvfiiye+FL7oIt+iFAYDCn+dmQr9YWEA0yquA/YYiLQLlArMwEkZp6SsH3fUOYlVDdNhps2znNjIvH8B9kZK02N2c5NP2lH4obB+iUV0MUP0TIXGkMAUASwVoGpQlmczLJnvBq9etGkru2RE1G5TTntvlfoT9+XHB6QqmlHdLA087tdARQerZS28EKNxWMMXLu60e7ldSAGEZumKI1P+8kfdYDwNcrzpcNH0gyEeiDeU3mH6ml2vYkbR0wIDAQAB",
   "name": "Connection Forwarder",
   "author": "Kyle Graehl",
-  "version": "0.0.8",
+  "version": "0.1.1",
   "manifest_version": 2,
   "offline_enabled": true,
   "minimum_chrome_version": "60",

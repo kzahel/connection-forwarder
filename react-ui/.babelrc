@@ -1,4 +1,6 @@
 {
-  "presets": ["react"],
-  "plugins": ["transform-class-properties"]
+  "plugins": [
+    "@babel/plugin-transform-react-jsx",
+    "@babel/plugin-syntax-class-properties"
+  ]
 }

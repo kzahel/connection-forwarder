@@ -1,11 +1,7 @@
-// @flow weak
-
-import React from 'react';
-import PropTypes from 'prop-types';
-import { withStyles } from 'material-ui/styles';
-import AppBar from 'material-ui/AppBar';
-import Toolbar from 'material-ui/Toolbar';
-import Typography from 'material-ui/Typography';
+const { withStyles } = MaterialUI
+const { AppBar } = MaterialUI
+const { Toolbar } = MaterialUI
+const { Typography } = MaterialUI
 
 const styles = theme => ({
   root: {

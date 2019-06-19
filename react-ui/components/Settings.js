@@ -1,7 +1,7 @@
-import React from 'react'
-import { FormControlLabel, FormGroup } from 'material-ui/Form';
-import Switch from 'material-ui/Switch';
-import Tooltip from 'material-ui/Tooltip';
+const { FormGroup } = MaterialUI
+const { FormControlLabel } = MaterialUI
+const { Switch } = MaterialUI
+const { Tooltip } = MaterialUI
 
 class Settings extends React.Component {
   changeSetting = (k,v) => {
@@ -14,7 +14,7 @@ class Settings extends React.Component {
 
         <FormGroup>
           <Tooltip title="Start the app when you sign in to your computer." 
-                   enterDelay="500"
+                   enterDelay={500}
                    >
           <FormControlLabel
             control={
@@ -30,7 +30,7 @@ class Settings extends React.Component {
 
         <FormGroup>
           <Tooltip title="Continue forwarding connections when this window is closed" 
-                   enterDelay="500"
+                   enterDelay={500}
                    >
           <FormControlLabel
             control={
@@ -46,7 +46,7 @@ class Settings extends React.Component {
 
         <FormGroup>
           <Tooltip title="Show IPV6 Addresses"
-                   enterDelay="500"
+                   enterDelay={500}
                    >
           <FormControlLabel
 

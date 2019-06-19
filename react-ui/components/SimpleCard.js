@@ -1,10 +1,10 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { withStyles } from 'material-ui/styles';
-import Card, { CardActions, CardContent } from 'material-ui/Card';
-import Button from 'material-ui/Button';
-import Typography from 'material-ui/Typography';
-import TextField from 'material-ui/TextField';
+const { withStyles } = MaterialUI
+const { Card } = MaterialUI
+const { CardActions } = MaterialUI
+const { CardContent } = MaterialUI
+const { Button } = MaterialUI
+const { Typography } = MaterialUI
+const { TextField } = MaterialUI
 
 const styles = theme => ({
   card: {

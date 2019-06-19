@@ -1,21 +1,17 @@
-import React from 'react'
+const { Paper } = MaterialUI
+const { Button } = MaterialUI
+const { Switch } = MaterialUI
+const { Checkbox } = MaterialUI
+const { FormGroup } = MaterialUI
+const { TextField } = MaterialUI
 
-import Paper from 'material-ui/Paper'
-import Button from 'material-ui/Button'
-import Switch from 'material-ui/Switch'
-import Checkbox from 'material-ui/Checkbox'
-import FormGroup from 'material-ui/Form/FormGroup'
-import TextField from 'material-ui/TextField'
-
-import MyAppBar from './MyAppBar'
-import SimpleCard from './SimpleCard'
-import SwitchLabels from './SwitchLabels'
-import InputFirewallRule from './InputFirewallRule'
-import RuleControl from './RuleControl'
-import Controls from './Controls'
-import Settings from './Settings'
-
-import 'typeface-roboto';
+import MyAppBar from './MyAppBar.js'
+import SimpleCard from './SimpleCard.js'
+import SwitchLabels from './SwitchLabels.js'
+import InputFirewallRule from './InputFirewallRule.js'
+import RuleControl from './RuleControl.js'
+import Controls from './Controls.js'
+import Settings from './Settings.js'
 
 
 function validatePort(port) {
@@ -93,7 +89,7 @@ class MyApp extends React.Component {
           {rules}
           { this.state.addingRule ?
 				    <InputFirewallRule ifaces={this.state.ifaces} /> :
-            <Button raised onClick={this.startAddRule}>Create Rule</Button> }
+            <Button variant="contained" onClick={this.startAddRule}>Create Rule</Button> }
             <Settings settings={this.state.settings} />
             <hr />
 

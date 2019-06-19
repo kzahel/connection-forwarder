@@ -1,17 +1,33 @@
-import React from 'react'
-import MenuItem from 'material-ui/Menu/MenuItem';
-import TextField from 'material-ui/TextField'
-import { FormControl, FormHelperText } from 'material-ui/Form';
-import Input, { InputLabel } from 'material-ui/Input';
-import Select from 'material-ui/Select';
-import Button from 'material-ui/Button';
-import Paper from 'material-ui/Paper';
+const { MenuItem } = MaterialUI
+const { TextField } = MaterialUI
+const { FormControlLabel } = MaterialUI
+const { FormControl } = MaterialUI
+const { FormGroup } = MaterialUI
+const { Input } = MaterialUI
+const { InputLabel } = MaterialUI
+const { Select } = MaterialUI
+const { Button } = MaterialUI
+const { Paper } = MaterialUI
+const { makeStyles } = MaterialUI
 
-let classes = {
+const classes = {
   menu: "clsMenu",
   port: "clsPort",
   formControl: "poop"
 }
+const styles = {
+  root: {
+    display: 'flex',
+    flexWrap: 'wrap',
+  },
+  formControl: {
+    margin: 10,
+    minWidth: 120,
+  }
+}
+
+
+
 const protocols = ['TCP','UDP']
 
 class InputFirewallRule extends React.Component {
@@ -109,8 +125,8 @@ class InputFirewallRule extends React.Component {
     return (
       <Paper>
       <div className="inputRuleContainer">
-
-        <FormControl className={classes.formControl} disabled>
+        <form style={styles.root}>
+        <FormControl style={styles.formControl} disabled>
           <InputLabel htmlFor="protocol">Protocol</InputLabel>
           <Select
             value={this.state.protocol}
@@ -142,7 +158,7 @@ class InputFirewallRule extends React.Component {
 			  </TextField>
         </span>
 
-
+<br />
         <TextField
           label="Source Port"
           error={this.checkPortError(this.state.src_port)}
@@ -178,6 +194,7 @@ class InputFirewallRule extends React.Component {
 			  </TextField>
         </span>
 
+<br />        
         <TextField
           label="Destination Port"
           value={this.state.dst_port}
@@ -197,15 +214,15 @@ class InputFirewallRule extends React.Component {
         */}
         <br />
 
-        <Button raised onClick={this.handleAdd}>
+        <Button variant="contained" onClick={this.handleAdd}>
           Add Rule
         </Button>
-        <Button raised onClick={this.cancel}>
+        <Button variant="contained" onClick={this.cancel}>
           Cancel
         </Button>
         {this.state.error?JSON.stringify(this.state.error):''}
 
-        
+        </form>        
       </div>
       </Paper>
     )

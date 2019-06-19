@@ -1,6 +1,6 @@
-import React from 'react'
-import { FormControlLabel, FormGroup } from 'material-ui/Form';
-import Switch from 'material-ui/Switch';
+const { FormControlLabel } = MaterialUI
+const { FormGroup } = MaterialUI
+const { Switch } = MaterialUI
 
 class Controls extends React.Component {
   toggle = (event, checked) => {
