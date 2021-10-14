@@ -11,7 +11,7 @@ chrome.sockets.tcpServer.onAccept.addListener( onAccept )
 function locateForward(id) {
   for (let lsock in Forwards) {
     let lrule = Forwards[lsock].defn
-    if (lrule.id == id) {
+    if (!!lrule && lrule.id == id) {
       return parseInt(lsock)
     }
   }
